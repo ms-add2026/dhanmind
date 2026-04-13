@@ -1,0 +1,25 @@
+{
+  "accounts": [
+    {
+      "name": "Savings Account",
+      "balance": 12500.75,
+      "currency": "USD",
+      "institution": "Bank of America",
+      "last_updated": "2026-04-10"
+    },
+    {
+      "name": "Checking Account",
+      "balance": 1840.20,
+      "currency": "USD",
+      "institution": "Bank of America",
+      "last_updated": "2026-04-10"
+    },
+    {
+      "name": "Robinhood",
+      "balance": 5200.00,
+      "currency": "USD",
+      "institution": "Robinhood",
+      "last_updated": "2026-04-10"
+    }
+  ]
+}
