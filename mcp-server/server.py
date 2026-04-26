@@ -11,6 +11,7 @@ mcp = FastMCP("DhanMind", stateless_http=True)
 @mcp.tool()
 def get_stock_quote(symbol: str) -> dict:
     """Get the current stock price for a given ticker symbol"""
+    print(f"[MCP SERVER] get_stock_quote called with symbol={symbol}")
     for stock in dummy_stocks:
         if stock["symbol"] == symbol:
             return stock

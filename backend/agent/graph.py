@@ -1,10 +1,9 @@
 import json
-import httpx
+from services.mcp_stock_client import get_stock_quote_from_mcp, MCPStockClientError
 from pathlib import Path
 from langgraph.graph import StateGraph, END
 from typing import TypedDict
 
-MCP_SERVER_URL = "http://127.0.0.1:8001"
 KB_PATH = Path(__file__).parent.parent / "data" / "accounts.json"
 
 KNOWN_SYMBOLS = ["AAPL", "MSFT", "TSLA", "NVDA", "GOOGL", "AMZN", "META"]
@@ -30,8 +29,7 @@ def classify_node(state: AgentState) -> AgentState:
                any(sym in upper for sym in KNOWN_SYMBOLS)
     return {**state, "path": "stock" if is_stock else "kb"}
 
-
-def stock_node(state: AgentState) -> AgentState:
+async def stock_node(state: AgentState) -> AgentState:
     upper = state["message"].upper()
     symbol = None
     for ks in KNOWN_SYMBOLS:
@@ -40,20 +38,24 @@ def stock_node(state: AgentState) -> AgentState:
             break
 
     if symbol is None:
-        return {**state, "answer": "I couldn't identify a stock symbol. Try asking about AAPL, MSFT, TSLA etc."}
+        return {
+            **state,
+            "answer": "I couldn't identify a stock symbol. Try asking about AAPL, MSFT, TSLA etc.",
+        }
 
     try:
-        response = httpx.get(f"{MCP_SERVER_URL}/stocks_info/{symbol}", timeout=5.0)
-        if response.status_code == 200:
-            data = response.json()
-            return {
-                **state,
-                "tool_result": data,
-                "answer": f"{symbol} is currently trading at ${data['price']} {data['currency']}."
-            }
-        return {**state, "answer": f"Could not fetch stock info for {symbol}."}
-    except Exception as e:
-        return {**state, "answer": f"MCP server error: {str(e)}"}
+        data = await get_stock_quote_from_mcp(symbol)
+
+        return {
+            **state,
+            "tool_result": data,
+            "answer": f"{symbol} is currently trading at ${data['price']} {data['currency']}.",
+        }
+    except MCPStockClientError as e:
+        return {
+            **state,
+            "answer": f"MCP server error: {str(e)}",
+        }
 
 
 def kb_node(state: AgentState) -> AgentState:
@@ -118,7 +120,7 @@ async def run_agent(message: str) -> dict:
         "answer": "",
         "tool_result": {},
     }
-    result = graph.invoke(initial_state)
+    result = await graph.ainvoke(initial_state)
     return {
         "answer": result["answer"],
         "path_used": result["path"],
