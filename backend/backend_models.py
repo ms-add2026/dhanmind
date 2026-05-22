@@ -4,6 +4,7 @@ from typing import Optional
 
 class ChatQueryRequest(BaseModel):
     message: str
+    session_id: str = "default-session"
 
 
 class ChatQueryResponse(BaseModel):

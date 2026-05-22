@@ -15,11 +15,11 @@ class MCPStockClientError(Exception):
     pass
 
 
-async def get_stock_quote_from_mcp(symbol: str) -> dict[str, Any]:
-    cleaned_symbol = symbol.strip().upper()
+async def get_stock_quote_from_mcp(query: str) -> dict[str, Any]:
+    cleaned_query = query.strip()
 
-    if not cleaned_symbol:
-        raise MCPStockClientError("Stock symbol is required.")
+    if not cleaned_query:
+        raise MCPStockClientError("Stock query is required.")
 
     try:
         async with streamablehttp_client(MCP_SERVER_URL) as (read, write, _):
@@ -28,13 +28,13 @@ async def get_stock_quote_from_mcp(symbol: str) -> dict[str, Any]:
 
                 result = await session.call_tool(
                     "get_stock_quote",
-                    {"symbol": cleaned_symbol},
+                    {"query": cleaned_query},
                 )
 
         if not result.content:
             raise MCPStockClientError("MCP tool returned no content.")
 
-        print(f"[MCP CLIENT] Calling MCP tool get_stock_quote for symbol={cleaned_symbol}")
+        print(f"[MCP CLIENT] Calling MCP tool get_stock_quote for query={cleaned_query}")
         # FastMCP usually returns tool output as structuredContent when possible.
         if getattr(result, "structuredContent", None):
             data = result.structuredContent
@@ -53,7 +53,22 @@ async def get_stock_quote_from_mcp(symbol: str) -> dict[str, Any]:
         if not isinstance(data, dict):
             raise MCPStockClientError("MCP tool returned unexpected response shape.")
 
-        return data
+        normalized = {
+            "query": data.get("query", cleaned_query),
+            "symbol": data.get("symbol"),
+            "price": data.get("price"),
+            "currency": data.get("currency", "USD"),
+            "source": data.get("source", "unknown"),
+            "error": data.get("error"),
+            "raw": data.get("raw"),
+        }
+
+        if normalized["price"] is None:
+            raise MCPStockClientError(
+                normalized.get("error") or "Quote response did not include a price."
+            )
+
+        return normalized
 
     except Exception as exc:
         raise MCPStockClientError(f"MCP stock quote call failed: {exc}") from exc

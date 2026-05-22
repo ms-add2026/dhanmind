@@ -13,7 +13,7 @@ def health():
 @router.post("/", response_model=ChatQueryResponse)
 async def process_user_query(request: ChatQueryRequest):
     try:
-        result = await run_agent(request.message)
+        result = await run_agent(request.message, request.session_id)
         return ChatQueryResponse(**result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
