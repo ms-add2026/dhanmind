@@ -105,7 +105,7 @@ def classify_node(state: AgentState) -> AgentState:
     if is_stock_query(message):
         topic = "stock"
     else:
-        # Check session context for ambiguous messages like "what about Amazon?"
+        # TODO: replace with LLM-based intent classification for robust conversational routing
         session_state = get_session_state(session_id)
         active_topic = session_state.get("active_topic")
         if active_topic == "stock":
@@ -130,12 +130,6 @@ async def stock_node(state: AgentState) -> AgentState:
                 "answer": data.get("error", f"Could not retrieve a valid price for {query}."),
             }
 
-        update_session_state(
-            state.get("session_id", "default-session"),
-            active_topic="stock",
-            last_stock_symbol=data["symbol"],
-        )
-        add_message(state.get("session_id", "default-session"), "user", state["message"])
         return {
             **state,
             "tool_result": data,
@@ -212,6 +206,24 @@ async def run_agent(message: str, session_id: str) -> dict:
     }
 
     result = await graph.ainvoke(initial_state)
+
+    # Centralized memory update — nodes stay focused on reasoning only
+    add_message(session_id, "user", message)
+    add_message(session_id, "assistant", result["answer"])
+
+    if result["path"] == "stock" and result.get("tool_result"):
+        update_session_state(
+            session_id,
+            active_topic="stock",
+            last_stock_symbol=result["tool_result"].get("symbol"),
+            last_tool_results={"stock": result["tool_result"]},
+        )
+    elif result["path"] == "kb":
+        update_session_state(
+            session_id,
+            active_topic="accounts",
+            last_tool_results={"account": result["tool_result"]},
+        )
 
     return {
         "answer": result["answer"],
