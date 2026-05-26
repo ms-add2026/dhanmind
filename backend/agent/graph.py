@@ -10,7 +10,10 @@ from services.session_memory import (
     get_session_state,
     update_session_state,
     add_message,
+    get_recent_messages,
 )
+
+from services.llm_service import extract_intent
 
 
 KB_PATH = Path(__file__).parent.parent / "data" / "accounts.json"
@@ -48,8 +51,7 @@ class AgentState(TypedDict):
     answer: str
     tool_result: dict
     session_id: str
-    session_state: dict
-
+    llm_extraction_info: dict | None
 
 def is_stock_query(message: str) -> bool:
     lower = message.lower()
@@ -98,27 +100,42 @@ def extract_symbol(message: str) -> str | None:
     return None
 
 
-def classify_node(state: AgentState) -> AgentState:
+async def classify_node(state: AgentState) -> AgentState:
     message = state["message"]
     session_id = state.get("session_id", "default-session")
 
-    if is_stock_query(message):
-        topic = "stock"
+    # Try LLM-based intent extraction first
+    recent = get_recent_messages(session_id)
+    extraction = await extract_intent(message, recent)
+
+    if extraction:
+        intent = extraction["intent"]
+        if intent == "stock":
+            topic = "stock"
+        elif intent == "accounts":
+            topic = "kb"
+        else:
+            # fin_knowledge, fin_recommendation, other — not yet implemented
+            topic = "kb"
     else:
-        # TODO: replace with LLM-based intent classification for robust conversational routing
-        session_state = get_session_state(session_id)
-        active_topic = session_state.get("active_topic")
-        if active_topic == "stock":
+        # Fallback: keyword classifier + session memory
+        if is_stock_query(message):
             topic = "stock"
         else:
-            topic = "kb"
+            session_state = get_session_state(session_id)
+            active_topic = session_state.get("active_topic")
+            topic = "stock" if active_topic == "stock" else "kb"
 
-    return {**state, "path": topic}
-
+    return {**state, "path": topic, "llm_extraction_info": extraction}
 
 async def stock_node(state: AgentState) -> AgentState:
-    symbol = extract_symbol(state["message"])
-    query = symbol if symbol else state["message"]
+    extraction = state.get("llm_extraction_info")
+    if extraction and extraction.get("stock_query"):
+        query = extraction["stock_query"]
+    else:
+        # Fallback when Ollama is unavailable
+        symbol = extract_symbol(state["message"])
+        query = symbol if symbol else state["message"]
 
     try:
         data = await get_stock_quote_from_mcp(query)
@@ -202,7 +219,7 @@ async def run_agent(message: str, session_id: str) -> dict:
         "answer": "",
         "tool_result": {},
         "session_id": session_id,
-        "session_state": {},
+        "llm_extraction_info": None
     }
 
     result = await graph.ainvoke(initial_state)

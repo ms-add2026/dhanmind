@@ -24,7 +24,7 @@ def chat(message: str, session_id: str = "test-session") -> httpx.Response:
     return httpx.post(
         f"{BACKEND_URL}/api/chat/",
         json={"message": message, "session_id": session_id},
-        timeout=15.0,
+        timeout=30.0,
     )
 
 
@@ -157,6 +157,32 @@ def test_session_memory_stock_followup():
     # System should infer stock context from session and route to stock tool
     assert body2["path_used"] == "stock"
     assert body2["tool_result"].get("symbol") == "AAPL"
+    assert body2["tool_result"].get("price") is not None
+
+
+# ---------------------------------------------------------------------------
+# Session memory — correction handling
+# ---------------------------------------------------------------------------
+
+def test_session_memory_correction():
+    """
+    User asks about a misspelled company, gets wrong result, then corrects themselves.
+    System should understand the correction and return the right stock.
+    """
+    session_id = "test-session-correction-001"
+    # Query 1 — misspelled
+    r1 = chat("and amazonn?", session_id=session_id)
+    assert r1.status_code == 200
+    body1 = r1.json()
+    assert body1["path_used"] == "stock"
+    assert body1["tool_result"].get("symbol") == "AMZN"
+
+    # Query 2 — explicit correction
+    r2 = chat("No I meant Amazon", session_id=session_id)
+    assert r2.status_code == 200
+    body2 = r2.json()
+    assert body2["path_used"] == "stock"
+    assert body2["tool_result"].get("symbol") == "AMZN"
     assert body2["tool_result"].get("price") is not None
 
 
