@@ -67,3 +67,16 @@ async def extract_intent(message: str, recent_messages: list[dict] | None = None
 
     except Exception:
         return None  # Ollama down or parse failed, caller handles fallback
+
+async def ask_llm(prompt: str) -> str:
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                OLLAMA_URL,
+                json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False},
+            )
+            response.raise_for_status()
+            return response.json().get("response", "").strip()
+    except Exception:
+        print(f"[ask_llm error] {e}")  # temporary
+        return "I'm unable to answer that right now. Please try again later."

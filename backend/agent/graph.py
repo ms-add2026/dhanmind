@@ -13,7 +13,7 @@ from services.session_memory import (
     get_recent_messages,
 )
 
-from services.llm_service import extract_intent
+from services.llm_service import extract_intent, ask_llm
 
 
 KB_PATH = Path(__file__).parent.parent / "data" / "accounts.json"
@@ -109,14 +109,15 @@ async def classify_node(state: AgentState) -> AgentState:
     extraction = await extract_intent(message, recent)
 
     if extraction:
-        intent = extraction["intent"]
-        if intent == "stock":
-            topic = "stock"
-        elif intent == "accounts":
-            topic = "kb"
-        else:
-            # fin_knowledge, fin_recommendation, other — not yet implemented
-            topic = "kb"
+        match extraction["intent"]:
+            case "stock":
+                topic = "stock"
+            case "accounts":
+                topic = "kb"
+            case "fin_knowledge" | "fin_recommendation":
+                topic = "llm"
+            case _:
+                topic = "llm"
     else:
         # Fallback: keyword classifier + session memory
         if is_stock_query(message):
@@ -195,6 +196,20 @@ def kb_node(state: AgentState) -> AgentState:
     }
 
 
+async def llm_node(state: AgentState) -> AgentState:
+    intent = (state.get("llm_extraction_info") or {}).get("intent", "other")
+
+    if intent == "fin_recommendation":
+        system_context = "You are a financial assistant. Always remind the user that this is not professional financial advice."
+    else:
+        system_context = "You are a knowledgeable financial assistant. Answer clearly and concisely."
+
+    prompt = f"{system_context}\n\nUser: {state['message']}\nAssistant:"
+    answer = await ask_llm(prompt)
+
+    return {**state, "answer": answer, "tool_result": {}}
+
+
 def route(state: AgentState) -> str:
     return state["path"]
 
@@ -203,11 +218,13 @@ builder = StateGraph(AgentState)
 builder.add_node("classify", classify_node)
 builder.add_node("stock", stock_node)
 builder.add_node("kb", kb_node)
+builder.add_node("llm", llm_node)
 
 builder.set_entry_point("classify")
-builder.add_conditional_edges("classify", route, {"stock": "stock", "kb": "kb"})
+builder.add_conditional_edges("classify", route, {"stock": "stock", "kb": "kb", "llm": "llm"})
 builder.add_edge("stock", END)
 builder.add_edge("kb", END)
+builder.add_edge("llm", END)
 
 graph = builder.compile()
 

@@ -9,6 +9,7 @@ interface Message {
   content: string;
   pathUsed?: string;
   toolResult?: Record<string, unknown> | null;
+  responseTime?: number;
 }
 
 const PATH_LABELS: Record<string, { label: string; color: string }> = {
@@ -53,7 +54,9 @@ export default function App() {
     setLoading(true);
 
     try {
+      const startTime = Date.now();
       const res = await axios.post(API_URL, { message: text });
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
       const { answer, path_used, tool_result } = res.data;
       setMessages((prev) => [
         ...prev,
@@ -63,6 +66,7 @@ export default function App() {
           content: answer,
           pathUsed: path_used,
           toolResult: tool_result,
+          responseTime: Number(elapsed),
         },
       ]);
     } catch {
@@ -72,7 +76,7 @@ export default function App() {
           id: Date.now() + 1,
           role: "assistant",
           content:
-            "Something went wrong. Make sure backend and MCP server are running.",
+            "",
         },
       ]);
     } finally {
@@ -138,6 +142,13 @@ export default function App() {
                     }`}
                   >
                     {PATH_LABELS[msg.pathUsed].label}
+                  </span>
+                )}
+
+                {/* Response time */}
+                {msg.responseTime && (
+                  <span className="block text-xs text-gray-400">
+                    ⏱ {msg.responseTime}s
                   </span>
                 )}
 

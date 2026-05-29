@@ -172,6 +172,8 @@ Open `http://localhost:5173` and try:
 
 ## About
 
+Source available for portfolio/review purposes only. Reuse, redistribution, or modification is not permitted without permission.
+
 Built by **Manish Addanki** as a portfolio showcase demonstrating:
 
 - Full-stack engineering (React + TypeScript + FastAPI)
