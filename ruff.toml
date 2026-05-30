@@ -4,7 +4,7 @@ select = [
     "F",   # pyflakes — catches undefined names, unused imports
     "I",   # isort — import ordering
 ]
-ignore = []
+ignore = ["E501"]  # line length not enforced — prompt strings are intentionally long
 
 [lint.per-file-ignores]
-"tests/*" = ["E501"]  # allow long lines in tests
+"tests/*" = ["E501"]

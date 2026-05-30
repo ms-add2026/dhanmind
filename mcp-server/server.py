@@ -1,13 +1,13 @@
 import contextlib
+import os
+import re
+
+import httpx
+from api_models import dummy_stocks
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from mcp.server.fastmcp import FastMCP
-from api_models import *
-import re
-
-import os
-import httpx
-from dotenv import load_dotenv
 
 load_dotenv()
 FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY")

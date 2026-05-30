@@ -3,18 +3,15 @@ import re
 from pathlib import Path
 from typing import TypedDict
 
-from langgraph.graph import StateGraph, END
-
-from services.mcp_stock_client import get_stock_quote_from_mcp, MCPStockClientError
+from langgraph.graph import END, StateGraph
+from services.llm_service import ask_llm, extract_intent
+from services.mcp_stock_client import MCPStockClientError, get_stock_quote_from_mcp
 from services.session_memory import (
-    get_session_state,
-    update_session_state,
     add_message,
     get_recent_messages,
+    get_session_state,
+    update_session_state,
 )
-
-from services.llm_service import extract_intent, ask_llm
-
 
 KB_PATH = Path(__file__).parent.parent / "data" / "accounts.json"
 

@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException
-from backend_models import ChatQueryRequest, ChatQueryResponse
 from agent.graph import run_agent
+from backend_models import ChatQueryRequest, ChatQueryResponse
+from fastapi import APIRouter, HTTPException
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 

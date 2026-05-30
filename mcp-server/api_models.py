@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 # Input model
 class StockSearchRequest(BaseModel):
     symbol: str

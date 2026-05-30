@@ -4,3 +4,4 @@ mcp[cli]
 langgraph
 langchain-core
 httpx
+ruff
