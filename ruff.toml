@@ -1,0 +1,10 @@
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes — catches undefined names, unused imports
+    "I",   # isort — import ordering
+]
+ignore = []
+
+[lint.per-file-ignores]
+"tests/*" = ["E501"]  # allow long lines in tests

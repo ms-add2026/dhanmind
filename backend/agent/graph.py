@@ -131,34 +131,34 @@ async def classify_node(state: AgentState) -> AgentState:
 
 async def stock_node(state: AgentState) -> AgentState:
     extraction = state.get("llm_extraction_info")
-    if extraction and extraction.get("stock_query"):
-        query = extraction["stock_query"]
+    queries = []
+
+    if extraction and extraction.get("stock_queries"):
+        queries = extraction["stock_queries"]
     else:
-        # Fallback when Ollama is unavailable
+        # Fallback when Ollama unavailable
         symbol = extract_symbol(state["message"])
-        query = symbol if symbol else state["message"]
+        queries = [symbol] if symbol else [state["message"]]
 
-    try:
-        data = await get_stock_quote_from_mcp(query)
+    results = []
+    last_tool_result = {}
 
-        if data.get("price") is None:
-            return {
-                **state,
-                "tool_result": data,
-                "answer": data.get("error", f"Could not retrieve a valid price for {query}."),
-            }
+    for query in queries:
+        try:
+            data = await get_stock_quote_from_mcp(query)
+            if data.get("price") is not None:
+                results.append(f"{data['symbol']} is currently trading at ${data['price']} {data['currency']}.")
+                last_tool_result = data
+            else:
+                results.append(data.get("error", f"Could not retrieve price for {query}."))
+        except MCPStockClientError as e:
+            results.append(f"MCP server error for {query}: {str(e)}")
 
-        return {
-            **state,
-            "tool_result": data,
-            "answer": f"{data['symbol']} is currently trading at ${data['price']} {data['currency']}.",
-        }
-
-    except MCPStockClientError as e:
-        return {
-            **state,
-            "answer": f"MCP server error: {str(e)}",
-        }
+    return {
+        **state,
+        "tool_result": last_tool_result,
+        "answer": "\n".join(results),
+    }
 
 
 def kb_node(state: AgentState) -> AgentState:

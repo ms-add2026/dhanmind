@@ -132,6 +132,24 @@ def test_empty_message_does_not_crash():
 
 
 # ---------------------------------------------------------------------------
+# Multi-stock queries
+# ---------------------------------------------------------------------------
+
+def test_stock_query_multiple_stocks():
+    """
+    User asks for two stocks in a single query.
+    Both should be resolved and returned in the answer.
+    """
+    r = chat("How about Apple and VOO?", session_id="test-multi-stock-001")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["path_used"] == "stock"
+    # Both symbols should appear in the answer
+    assert "AAPL" in body["answer"]
+    assert "VOO" in body["answer"]
+
+
+# ---------------------------------------------------------------------------
 # Session memory — follow-up queries 
 # ---------------------------------------------------------------------------
 

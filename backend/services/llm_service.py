@@ -1,4 +1,5 @@
 import json
+import logging
 import httpx
 from typing import Any
 
@@ -19,17 +20,18 @@ def build_prompt(message: str, recent_messages: list[dict]) -> str:
 Also extract entities if present.
 
 Respond with ONLY a JSON object:
-{{"intent": "stock|accounts|fin_knowledge|fin_recommendation|other", "stock_query": "<company or ticker or null>", "account_target": "<savings|checking|robinhood or null>"}}
+{{"intent": "stock|accounts|fin_knowledge|fin_recommendation|other", "stock_queries": ["<company or ticker>"], "account_target": "<savings|checking|robinhood or null>"}}
 
 Examples:
-"What is Amazon stock price?" -> {{"intent": "stock", "stock_query": "Amazon", "account_target": null}}
-"how about apple" -> {{"intent": "stock", "stock_query": "Apple", "account_target": null}}
-"and amazonn?" -> {{"intent": "stock", "stock_query": "Amazon", "account_target": null}}
-"No I meant Amazon" -> {{"intent": "stock", "stock_query": "Amazon", "account_target": null}}
-"I meant AMZN" -> {{"intent": "stock", "stock_query": "AMZN", "account_target": null}}
-"what is my checking balance?" -> {{"intent": "accounts", "stock_query": null, "account_target": "checking"}}
-"what is a P/E ratio?" -> {{"intent": "fin_knowledge", "stock_query": null, "account_target": null}}
-"should I buy AAPL?" -> {{"intent": "fin_recommendation", "stock_query": "AAPL", "account_target": null}}
+"What is Amazon stock price?" -> {{"intent": "stock", "stock_queries": ["Amazon"], "account_target": null}}
+"how about apple" -> {{"intent": "stock", "stock_queries": ["Apple"], "account_target": null}}
+"and amazonn?" -> {{"intent": "stock", "stock_queries": ["Amazon"], "account_target": null}}
+"No I meant Amazon" -> {{"intent": "stock", "stock_queries": ["Amazon"], "account_target": null}}
+"I meant AMZN" -> {{"intent": "stock", "stock_queries": ["AMZN"], "account_target": null}}
+"How about Apple and VOO?" -> {{"intent": "stock", "stock_queries": ["Apple", "VOO"], "account_target": null}}
+"what is my checking balance?" -> {{"intent": "accounts", "stock_queries": [], "account_target": "checking"}}
+"what is a P/E ratio?" -> {{"intent": "fin_knowledge", "stock_queries": [], "account_target": null}}
+"should I buy AAPL?" -> {{"intent": "fin_recommendation", "stock_queries": ["AAPL"], "account_target": null}}
 
 User message: "{message}"
 JSON:"""
@@ -61,12 +63,17 @@ async def extract_intent(message: str, recent_messages: list[dict] | None = None
 
         return {
             "intent": intent,
-            "stock_query": parsed.get("stock_query"),
+            "stock_queries": parsed.get("stock_queries") or [],
             "account_target": parsed.get("account_target"),
         }
 
-    except Exception:
-        return None  # Ollama down or parse failed, caller handles fallback
+    except httpx.TimeoutException:
+        logging.warning("[extract_intent] Request timed out")
+        return None  # falls back to keyword routing
+    except Exception as e:
+        logging.error(f"[extract_intent] Unexpected error: {e}")
+        return None
+
 
 async def ask_llm(prompt: str) -> str:
     try:
@@ -77,6 +84,10 @@ async def ask_llm(prompt: str) -> str:
             )
             response.raise_for_status()
             return response.json().get("response", "").strip()
-    except Exception:
-        print(f"[ask_llm error] {e}")  # temporary
+    except httpx.TimeoutException:
+        logging.warning("[ask_llm] Request timed out")
+        return "This query is taking too long to process. Please try again or simplify your question."
+    except Exception as e:
+        logging.error(f"[ask_llm] Unexpected error: {e}")
         return "I'm unable to answer that right now. Please try again later."
+
