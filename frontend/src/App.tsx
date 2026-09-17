@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 
 const API_URL = "http://localhost:8000/api/chat/";
+const ERROR_MESSAGE =
+  "I couldn't reach the local DhanMind backend. Please make sure the backend is running on port 8000 and try again.";
 
 interface Message {
   id: number;
@@ -75,8 +77,7 @@ export default function App() {
         {
           id: Date.now() + 1,
           role: "assistant",
-          content:
-            "",
+          content: ERROR_MESSAGE,
         },
       ]);
     } finally {
@@ -198,6 +199,7 @@ export default function App() {
               onKeyDown={handleKey}
             />
             <button
+              aria-label="Send message"
               onClick={sendMessage}
               disabled={loading || !input.trim()}
               className="w-8 h-8 rounded-lg bg-teal-600 hover:bg-teal-700 disabled:bg-gray-200 disabled:cursor-not-allowed flex items-center justify-center transition-colors flex-shrink-0"
