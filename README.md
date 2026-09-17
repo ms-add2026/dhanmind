@@ -94,7 +94,7 @@ Agent: classifies → personal finance question
 
 | Layer | Technology | Notes |
 |---|---|---|
-| Frontend | React 18 + TypeScript + Tailwind CSS v4 | Vite build |
+| Frontend | React 19 + TypeScript + Tailwind CSS v4 | Vite build |
 | Backend | Python + FastAPI | Async, port 8000 |
 | Agent orchestration | LangGraph | State graph routing |
 | MCP server | FastMCP + official MCP SDK 1.27.0 | Streamable HTTP transport |
