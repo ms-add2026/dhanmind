@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import TypedDict
 
 from langgraph.graph import END, StateGraph
+from services.fallback_router import classify_fallback
 from services.llm_service import ask_llm, extract_intent
 from services.mcp_stock_client import MCPStockClientError, get_stock_quote_from_mcp
 from services.session_memory import (
@@ -49,22 +50,6 @@ class AgentState(TypedDict):
     tool_result: dict
     session_id: str
     llm_extraction_info: dict | None
-
-def is_stock_query(message: str) -> bool:
-    lower = message.lower()
-    upper = message.upper()
-
-    if any(keyword in lower for keyword in STOCK_KEYWORDS):
-        return True
-
-    if re.search(r"\$[A-Z]{1,5}\b", upper):
-        return True
-
-    if re.search(r"\b(?:TICKER|SYMBOL)\s+[A-Z]{1,5}\b", upper):
-        return True
-
-    return False
-
 
 def extract_symbol(message: str) -> str | None:
     upper = message.upper()
@@ -116,13 +101,9 @@ async def classify_node(state: AgentState) -> AgentState:
             case _:
                 topic = "llm"
     else:
-        # Fallback: keyword classifier + session memory
-        if is_stock_query(message):
-            topic = "stock"
-        else:
-            session_state = get_session_state(session_id)
-            active_topic = session_state.get("active_topic")
-            topic = "stock" if active_topic == "stock" else "kb"
+        # Deterministic and offline-testable fallback when Ollama is unavailable
+        session_state = get_session_state(session_id)
+        topic = classify_fallback(message, session_state.get("active_topic"))
 
     return {**state, "path": topic, "llm_extraction_info": extraction}
 

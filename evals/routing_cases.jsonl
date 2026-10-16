@@ -1,0 +1,24 @@
+{"message":"What is AAPL trading at right now?","active_topic":null,"expected_path":"stock"}
+{"message":"Stock price of MSFT","active_topic":null,"expected_path":"stock"}
+{"message":"How is $TSLA doing today?","active_topic":null,"expected_path":"stock"}
+{"message":"Can you show current quote for VOO?","active_topic":null,"expected_path":"stock"}
+{"message":"ticker NVDA","active_topic":null,"expected_path":"stock"}
+{"message":"How about Apple and VOO?","active_topic":null,"expected_path":"stock"}
+{"message":"What is my savings account balance?","active_topic":null,"expected_path":"kb"}
+{"message":"Show me my checking account","active_topic":null,"expected_path":"kb"}
+{"message":"How much is in Robinhood?","active_topic":null,"expected_path":"kb"}
+{"message":"What is my total account balance?","active_topic":null,"expected_path":"kb"}
+{"message":"Show all my accounts","active_topic":null,"expected_path":"kb"}
+{"message":"What is a P/E ratio?","active_topic":null,"expected_path":"llm"}
+{"message":"Explain dollar cost averaging","active_topic":null,"expected_path":"llm"}
+{"message":"What does an ETF mean?","active_topic":null,"expected_path":"llm"}
+{"message":"Should I buy AAPL?","active_topic":null,"expected_path":"llm"}
+{"message":"Should I sell my stocks?","active_topic":null,"expected_path":"llm"}
+{"message":"Is VOO a good investment?","active_topic":null,"expected_path":"llm"}
+{"message":"How about Apple?","active_topic":"stock","expected_path":"stock"}
+{"message":"No I meant NVDA","active_topic":"stock","expected_path":"stock"}
+{"message":"What is CPI?","active_topic":"stock","expected_path":"llm"}
+{"message":"How about my savings instead?","active_topic":"stock","expected_path":"kb"}
+{"message":"Hello","active_topic":null,"expected_path":"llm"}
+{"message":"What are you able to do?","active_topic":null,"expected_path":"llm"}
+{"message":" ","active_topic":null,"expected_path":"llm"}

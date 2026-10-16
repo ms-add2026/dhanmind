@@ -4,13 +4,12 @@
 
 [![Status](https://img.shields.io/badge/status-in%20progress-orange)](https://github.com/ms-add2026/dhanmind)
 [![Stack](https://img.shields.io/badge/stack-React%20%7C%20FastAPI%20%7C%20LangGraph%20%7C%20MCP-blue)](https://github.com/ms-add2026/dhanmind)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ---
 
 ## What is DhanMind?
 
-DhanMind is a privacy-first AI agent for personal finance. It runs entirely on your machine — no personal data is ever sent to the cloud. You ask financial questions in natural language, and the agent decides in real time whether to:
+DhanMind is a privacy-first AI agent for personal finance. Personal account fixtures and local-model inference stay on your machine in the prototype; stock-quote requests send a symbol/query to Finnhub. Do not use sensitive real data until storage, logging, and access controls are reviewed. You ask financial questions in natural language, and the agent decides in real time whether to:
 
 - Fetch **live market data** via an MCP tool server
 - Retrieve **your private financial data** from a local knowledge base
@@ -44,7 +43,7 @@ The architecture is designed to showcase production-grade agentic AI patterns: M
 │        │                          ▼                         │
 │        │                   MCP Server (port 8001)           │
 │        │                   get_stock_quote tool             │
-│        │                   └── Mock → Finnhub (V1.5)        │
+│        │                   └── Finnhub live quotes        │
 │        │                                                    │
 │        └── personal question ──► kb_node                   │
 │                                      │                      │
@@ -60,7 +59,7 @@ The architecture is designed to showcase production-grade agentic AI patterns: M
 │  Valkey Search (Docker)     nomic-embed-text (Ollama)       │
 │  Vector KB — V1.5           Embeddings — V1.5               │
 │                                                             │
-│  Gemma 4 via Ollama (M1 Metal)     Finnhub API              │
+│  Gemma 3 4B via Ollama (M1 Metal)     Finnhub API              │
 │  Local LLM — V1.5                  Stock quotes — V1.5      │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -99,7 +98,7 @@ Agent: classifies → personal finance question
 | Agent orchestration | LangGraph | State graph routing |
 | MCP server | FastMCP + official MCP SDK 1.27.0 | Streamable HTTP transport |
 | Vector DB | Valkey Search (Docker) | VSS via HNSW — V1.5 |
-| Local LLM | Gemma 4 (gemma4:e4b) via Ollama | M1 Metal acceleration — V1.5 |
+| Local LLM | Gemma 3 4B (gemma3:4b) via Ollama | M1 Metal acceleration — V1.5 |
 | Embeddings | nomic-embed-text via Ollama | Apache 2.0 — V1.5 |
 | Stock API | Finnhub free tier | Real-time quotes — V1.5 |
 
@@ -112,19 +111,19 @@ Agent: classifies → personal finance question
 - [x] React + TypeScript chat UI with path/tool visibility
 - [x] FastAPI backend with `/api/chat/` endpoint
 - [x] LangGraph agent with classify → route → answer graph
-- [x] MCP server with `get_stock_quote` tool (mock data)
+- [x] MCP server with `get_stock_quote` tool (Finnhub live quotes)
 - [x] Local KB reader from `accounts.json`
 - [x] Two working demo flows end-to-end
 - [x] UI shows which path/tool was used per response
 
 ### 🔄 V1.5 — In Progress
 
-- [ ] Real Finnhub API for live stock quotes
+- [x] Real Finnhub API for live stock quotes
 - [ ] nomic-embed-text embeddings for document chunks
 - [ ] Valkey Search VSS vector store (validated locally — see Technical Decisions)
 - [ ] Full RAG pipeline — embed → store → KNN retrieve → LLM synthesise
-- [ ] Gemma 4 (gemma4:e4b) local LLM via Ollama for answer synthesis
-- [ ] Conversation memory — LangGraph session state
+- [x] Gemma 3 4B (`gemma3:4b`) local LLM via Ollama for classification and responses
+- [x] Process-local, bounded conversation memory (not durable LangGraph checkpointing)
 - [ ] KB search exposed as MCP tool
 
 ### 📋 V2 — Planned
@@ -134,6 +133,12 @@ Agent: classifies → personal finance question
 - [ ] Multi-document knowledge base
 - [ ] Dashboard widgets — spending, net worth
 - [ ] Support for  US and India based financial literacy
+
+## Reboot: October 2026
+
+- [DhanMind 2.0 learning and architecture roadmap](docs/roadmap-2026.md)
+- [Offline agent routing evaluations](evals/README.md) — run `python evals/evaluate_fallback.py --min-accuracy 1.0`; no model or APIs required
+- Planned: source-cited document RAG, a Rust ingestion worker, durable checkpoints, deterministic financial scenarios, and agent trace visualization
 
 ## Running Local
 
@@ -172,7 +177,7 @@ Open `http://localhost:5173` and try:
 
 ## About
 
-Source available for portfolio/review purposes only. Reuse, redistribution, or modification is not permitted without permission.
+Source available for portfolio/review purposes only. This repository currently has no published LICENSE file; do not assume an open-source license.
 
 Built by **Manish Addanki** as a portfolio showcase demonstrating:
 
@@ -181,6 +186,6 @@ Built by **Manish Addanki** as a portfolio showcase demonstrating:
 - Model Context Protocol (MCP) tool integration
 - Local-first privacy architecture
 - Vector search infrastructure (Valkey Search — contributed to at AWS/ElastiCache)
-- Local LLM inference (Gemma 4 via Ollama)
+- Local LLM inference (Gemma 3 4B via Ollama)
 
 **Resume contact:** manish.add2026@gmail.com
