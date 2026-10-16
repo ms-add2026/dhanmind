@@ -30,7 +30,7 @@ _FOLLOWUP_WITH_TICKER = re.compile(r"(?i:\b(?:how|what)\s+about\b).*\b[A-Z]{2,5}
 
 
 def classify_fallback(message: str, active_topic: str | None = None) -> str:
-    """Return \`\`stock\`\`, \`\`kb\`\` or \`\`llm\`\`; never trigger an external action.
+    """Return ``stock``, ``kb`` or ``llm``; never trigger an external action.
 
     Order matters: requests for advice are not treated as quote lookups, and
     explicit account queries override a previous stock discussion.
