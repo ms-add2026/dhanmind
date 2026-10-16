@@ -4,7 +4,6 @@
 
 [![Status](https://img.shields.io/badge/status-in%20progress-orange)](https://github.com/ms-add2026/dhanmind)
 [![Stack](https://img.shields.io/badge/stack-React%20%7C%20FastAPI%20%7C%20LangGraph%20%7C%20MCP-blue)](https://github.com/ms-add2026/dhanmind)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ---
 
